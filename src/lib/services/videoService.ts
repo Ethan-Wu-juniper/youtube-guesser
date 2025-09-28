@@ -55,15 +55,24 @@ async function getVideoInfo(videoId: string) {
 }
 
 
+// 預設影片資料 - 當 API 調用失敗時使用
+const DEFAULT_VIDEO_DATA: VideoData = {
+  id: "dQw4w9WgXcQ", // Rick Astley - Never Gonna Give You Up
+  title: "Rick Astley - Never Gonna Give You Up",
+  viewCount: 1437591533 // 更新截至 2023 年的大約觀看次數
+};
+
 export const getRandomVideo = async (): Promise<VideoData> => {
   try {
     if (!API_KEY) {
-      throw new Error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
+      console.error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
+      return DEFAULT_VIDEO_DATA;
     }
 
     const videoIds = await searchRandomVideos();
     if (videoIds.length === 0) {
-      throw new Error("無法獲取影片 ID");
+      console.error("無法獲取影片 ID");
+      return DEFAULT_VIDEO_DATA;
     }
 
     const randomIndex = Math.floor(Math.random() * videoIds.length);
@@ -72,13 +81,14 @@ export const getRandomVideo = async (): Promise<VideoData> => {
     const videoInfo = await getVideoInfo(randomVideoId);
     
     if (!videoInfo) {
-      throw new Error("無法獲取影片資訊");
+      console.error("無法獲取影片資訊");
+      return DEFAULT_VIDEO_DATA;
     }
     
     return videoInfo as VideoData;
   } catch (error) {
     console.error("獲取隨機影片錯誤:", error);
-    throw error;
+    return DEFAULT_VIDEO_DATA;
   }
 };
 

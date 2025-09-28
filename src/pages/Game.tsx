@@ -30,26 +30,12 @@ const Game = () => {
       userGuess: null
     }));
     
-    try {
-      const video = await getRandomVideo();
-      
-      if (video && video.id && video.title && video.viewCount) {
-        setGameState(prev => ({
-          ...prev,
-          status: 'playing',
-          currentVideo: video
-        }));
-      } else {
-        throw new Error('獲取的影片數據不完整');
-      }
-    } catch (error) {
-      console.error('Error fetching video:', error);
-      alert('無法載入影片，請再試一次');
-      
-      setTimeout(() => {
-        fetchRandomVideo();
-      }, 2000);
-    }
+    const video = await getRandomVideo();
+    setGameState(prev => ({
+      ...prev,
+      status: 'playing',
+      currentVideo: video
+    }));
   };
   
   useEffect(() => {
