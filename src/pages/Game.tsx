@@ -159,10 +159,6 @@ const Game = () => {
           
           {gameState.status === 'result' && gameState.currentVideo && (
             <div className="space-y-4 text-center">
-              <div className="text-xl font-bold">
-                結果揭曉！
-              </div>
-              
               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-sm text-blue-700">你的猜測</div>
@@ -180,20 +176,15 @@ const Game = () => {
               </div>
               
               <div className="text-lg">
-                {gameState.userGuess && gameState.currentVideo && (
-                  <div>
-                    差異: {Math.abs(gameState.userGuess - gameState.currentVideo.viewCount) < gameState.currentVideo.viewCount * 0.1 ? (
-                      <span className="text-green-600 font-bold">非常接近！</span>
-                    ) : Math.abs(gameState.userGuess - gameState.currentVideo.viewCount) < gameState.currentVideo.viewCount * 0.3 ? (
-                      <span className="text-blue-600 font-bold">還不錯！</span>
-                    ) : (
-                      <span className="text-orange-600 font-bold">差距有點大！</span>
-                    )}
-                  </div>
-                )}
-                
-                <div className="mt-2">
-                  本輪得分: 
+                <div className="flex justify-center items-center gap-2 mt-2">
+                  {Math.abs(gameState.userGuess - gameState.currentVideo.viewCount) < gameState.currentVideo.viewCount * 0.1 ? (
+                    <span className="text-green-600 font-bold">非常接近！</span>
+                  ) : Math.abs(gameState.userGuess - gameState.currentVideo.viewCount) < gameState.currentVideo.viewCount * 0.3 ? (
+                    <span className="text-blue-600 font-bold">還不錯！</span>
+                  ) : (
+                    <span className="text-orange-600 font-bold">差距有點大！</span>
+                  )}
+                  <span>本輪得分:</span>
                   <span className="text-xl font-bold ml-2">
                     +{calculateScore(gameState.userGuess || 0, gameState.currentVideo.viewCount)}
                   </span>
