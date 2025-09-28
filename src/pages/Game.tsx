@@ -95,12 +95,13 @@ const Game = () => {
     width: '640',
     playerVars: {
       autoplay: 1,
+      loop: 1,
       controls: 0,
       disablekb: 1,
       fs: 0,
       modestbranding: 1,
       rel: 0,
-      showinfo: 0
+      playlist: gameState.currentVideo?.id
     },
   };
   
