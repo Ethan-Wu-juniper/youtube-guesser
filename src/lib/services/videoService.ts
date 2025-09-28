@@ -1,7 +1,65 @@
 import { VideoData } from "../types";
 
-// 由於我們沒有真正的 YouTube API 金鑰，這裡使用預先定義的影片列表
-const popularVideos: VideoData[] = [
+// 暫時使用這個 API_KEY，實際使用時應該放在環境變數中
+export const API_KEY = "你的_API_KEY";
+const count = 50;
+
+// 生成隨機字串
+function generateRandom() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 3; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// 搜尋隨機影片並取得影片ID
+async function searchRandomVideos() {
+  const random = generateRandom();
+  const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&maxResults=${count}&part=snippet&type=video&q=${random}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const videoIds = [];
+    for (const item of data.items) {
+      const videoId = item.id.videoId;
+      videoIds.push(videoId);
+    }
+    return videoIds;
+  } catch (error) {
+    console.error('搜尋影片錯誤:', error);
+    return [];
+  }
+}
+
+// 取得影片資訊
+async function getVideoInfo(videoId: string) {
+  const url = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoId}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.items && data.items.length > 0) {
+      const video = data.items[0];
+      return {
+        id: videoId,
+        title: video.snippet.title,
+        viewCount: parseInt(video.statistics.viewCount, 10)
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('取得影片資訊錯誤:', error);
+    return null;
+  }
+}
+
+// 由於我們還沒有設置 API_KEY，先使用預定義的影片列表作為備用
+const fallbackVideos: VideoData[] = [
   {
     id: "dQw4w9WgXcQ",
     title: "Rick Astley - Never Gonna Give You Up",
@@ -26,43 +84,44 @@ const popularVideos: VideoData[] = [
     id: "OPf0YbXqDm0",
     title: "Mark Ronson - Uptown Funk ft. Bruno Mars",
     viewCount: 4817950990
-  },
-  {
-    id: "RgKAFK5djSk",
-    title: "Wiz Khalifa - See You Again ft. Charlie Puth",
-    viewCount: 5766477126
-  },
-  {
-    id: "pRpeEdMmmQ0",
-    title: "Shakira - Waka Waka (This Time for Africa)",
-    viewCount: 3434712211
-  },
-  {
-    id: "CevxZvSJLk8",
-    title: "Katy Perry - Roar",
-    viewCount: 3806582926
-  },
-  {
-    id: "l0U7SxXHkPY",
-    title: "Justin Bieber - Baby ft. Ludacris",
-    viewCount: 2855090453
-  },
-  {
-    id: "PT2_F-1esPk",
-    title: "Adele - Hello",
-    viewCount: 3224302307
   }
 ];
 
 // 獲取隨機影片
-export const getRandomVideo = (): Promise<VideoData> => {
-  return new Promise((resolve) => {
-    // 模擬網絡請求延遲
-    setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * popularVideos.length);
-      resolve(popularVideos[randomIndex]);
-    }, 1000);
-  });
+export const getRandomVideo = async (): Promise<VideoData> => {
+  try {
+    if (API_KEY === "你的_API_KEY") {
+      // 如果沒有設置 API_KEY，使用備用影片列表
+      const randomIndex = Math.floor(Math.random() * fallbackVideos.length);
+      return fallbackVideos[randomIndex];
+    }
+    
+    // 使用 YouTube API 獲取隨機影片
+    const videoIds = await searchRandomVideos();
+    
+    if (videoIds.length === 0) {
+      throw new Error("無法獲取影片 ID");
+    }
+    
+    // 隨機選擇一個影片 ID
+    const randomIndex = Math.floor(Math.random() * videoIds.length);
+    const randomVideoId = videoIds[randomIndex];
+    
+    // 獲取該影片的詳細信息
+    const videoInfo = await getVideoInfo(randomVideoId);
+    
+    if (!videoInfo) {
+      throw new Error("無法獲取影片資訊");
+    }
+    
+    return videoInfo as VideoData;
+  } catch (error) {
+    console.error("獲取隨機影片錯誤:", error);
+    
+    // 發生錯誤時使用備用影片
+    const randomIndex = Math.floor(Math.random() * fallbackVideos.length);
+    return fallbackVideos[randomIndex];
+  }
 };
 
 // 計算得分，基於猜測與實際觀看次數的接近程度

@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
 import { GameState, VideoData } from "@/lib/types";
-import { getRandomVideo, calculateScore, formatNumber } from "@/lib/services/videoService";
+import { getRandomVideo, calculateScore, formatNumber, API_KEY } from "@/lib/services/videoService";
 
 const Game = () => {
   // 遊戲狀態
@@ -39,13 +39,26 @@ const Game = () => {
     
     try {
       const video = await getRandomVideo();
-      setGameState(prev => ({
-        ...prev,
-        status: 'playing',
-        currentVideo: video
-      }));
+      
+      // 確保成功獲取影片數據
+      if (video && video.id && video.title && video.viewCount) {
+        setGameState(prev => ({
+          ...prev,
+          status: 'playing',
+          currentVideo: video
+        }));
+      } else {
+        throw new Error('獲取的影片數據不完整');
+      }
     } catch (error) {
       console.error('Error fetching video:', error);
+      // 顯示錯誤消息給用戶
+      alert('無法載入影片，請再試一次');
+      
+      // 重試一次
+      setTimeout(() => {
+        fetchRandomVideo();
+      }, 2000);
     }
   };
   
@@ -151,6 +164,11 @@ const Game = () => {
           
           <div className="mt-2 text-sm text-neutral-500">
             總分: {gameState.score} | 回合: {gameState.attempts}
+            {API_KEY === "你的_API_KEY" && (
+              <div className="text-orange-500 mt-1">
+                使用預設影片資料（未設置 YouTube API Key）
+              </div>
+            )}
           </div>
         </CardHeader>
         
