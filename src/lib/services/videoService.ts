@@ -1,10 +1,8 @@
 import { VideoData } from "../types";
 
-// 暫時使用這個 API_KEY，實際使用時應該放在環境變數中
-export const API_KEY = "你的_API_KEY";
+export const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const count = 50;
 
-// 生成隨機字串
 function generateRandom() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -14,7 +12,6 @@ function generateRandom() {
   return result;
 }
 
-// 搜尋隨機影片並取得影片ID
 async function searchRandomVideos() {
   const random = generateRandom();
   const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&maxResults=${count}&part=snippet&type=video&q=${random}`;
@@ -58,42 +55,11 @@ async function getVideoInfo(videoId: string) {
   }
 }
 
-// 由於我們還沒有設置 API_KEY，先使用預定義的影片列表作為備用
-const fallbackVideos: VideoData[] = [
-  {
-    id: "dQw4w9WgXcQ",
-    title: "Rick Astley - Never Gonna Give You Up",
-    viewCount: 1398759302
-  },
-  {
-    id: "9bZkp7q19f0",
-    title: "PSY - Gangnam Style",
-    viewCount: 4723741980
-  },
-  {
-    id: "JGwWNGJdvx8",
-    title: "Ed Sheeran - Shape of You",
-    viewCount: 5983513123
-  },
-  {
-    id: "kJQP7kiw5Fk",
-    title: "Luis Fonsi - Despacito ft. Daddy Yankee",
-    viewCount: 8190067015
-  },
-  {
-    id: "OPf0YbXqDm0",
-    title: "Mark Ronson - Uptown Funk ft. Bruno Mars",
-    viewCount: 4817950990
-  }
-];
 
-// 獲取隨機影片
 export const getRandomVideo = async (): Promise<VideoData> => {
   try {
-    if (API_KEY === "你的_API_KEY") {
-      // 如果沒有設置 API_KEY，使用備用影片列表
-      const randomIndex = Math.floor(Math.random() * fallbackVideos.length);
-      return fallbackVideos[randomIndex];
+    if (!API_KEY) {
+      throw new Error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
     }
     
     // 使用 YouTube API 獲取隨機影片
@@ -117,14 +83,10 @@ export const getRandomVideo = async (): Promise<VideoData> => {
     return videoInfo as VideoData;
   } catch (error) {
     console.error("獲取隨機影片錯誤:", error);
-    
-    // 發生錯誤時使用備用影片
-    const randomIndex = Math.floor(Math.random() * fallbackVideos.length);
-    return fallbackVideos[randomIndex];
+    throw error; // 將錯誤拋出，讓調用者處理
   }
 };
 
-// 計算得分，基於猜測與實際觀看次數的接近程度
 export const calculateScore = (guess: number, actual: number): number => {
   const difference = Math.abs(guess - actual);
   const percentageDifference = (difference / actual) * 100;
