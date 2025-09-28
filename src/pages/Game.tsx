@@ -122,18 +122,25 @@ const Game = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <div className="flex justify-center rounded-lg overflow-hidden shadow-lg">
+          <div className="flex justify-center rounded-lg overflow-hidden shadow-lg relative">
             {gameState.status === 'loading' ? (
               <div className="bg-neutral-200 h-[390px] w-[640px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
               </div>
             ) : gameState.currentVideo ? (
-              <YouTube 
-                videoId={gameState.currentVideo.id} 
-                opts={opts} 
-                onReady={onPlayerReady}
-                className="rounded-lg overflow-hidden"
-              />
+              <>
+                <YouTube 
+                  videoId={gameState.currentVideo.id} 
+                  opts={opts} 
+                  onReady={onPlayerReady}
+                  className="rounded-lg overflow-hidden"
+                />
+                {gameState.status !== 'result' && (
+                  <div 
+                    className="absolute inset-0 bg-transparent cursor-not-allowed"
+                  />
+                )}
+              </>
             ) : null}
           </div>
           <Separator />
