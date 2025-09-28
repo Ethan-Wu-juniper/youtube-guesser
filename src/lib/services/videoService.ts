@@ -32,7 +32,6 @@ async function searchRandomVideos() {
   }
 }
 
-// 取得影片資訊
 async function getVideoInfo(videoId: string) {
   const url = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoId}`;
   
@@ -61,19 +60,15 @@ export const getRandomVideo = async (): Promise<VideoData> => {
     if (!API_KEY) {
       throw new Error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
     }
-    
-    // 使用 YouTube API 獲取隨機影片
+
     const videoIds = await searchRandomVideos();
-    
     if (videoIds.length === 0) {
       throw new Error("無法獲取影片 ID");
     }
-    
-    // 隨機選擇一個影片 ID
+
     const randomIndex = Math.floor(Math.random() * videoIds.length);
     const randomVideoId = videoIds[randomIndex];
-    
-    // 獲取該影片的詳細信息
+
     const videoInfo = await getVideoInfo(randomVideoId);
     
     if (!videoInfo) {
@@ -83,7 +78,7 @@ export const getRandomVideo = async (): Promise<VideoData> => {
     return videoInfo as VideoData;
   } catch (error) {
     console.error("獲取隨機影片錯誤:", error);
-    throw error; // 將錯誤拋出，讓調用者處理
+    throw error;
   }
 };
 
@@ -91,21 +86,14 @@ export const calculateScore = (guess: number, actual: number): number => {
   const difference = Math.abs(guess - actual);
   const percentageDifference = (difference / actual) * 100;
   
-  // 差異小於 10% 得 100 分
   if (percentageDifference < 10) return 100;
-  // 差異小於 20% 得 80 分
   if (percentageDifference < 20) return 80;
-  // 差異小於 30% 得 60 分
   if (percentageDifference < 30) return 60;
-  // 差異小於 50% 得 40 分
   if (percentageDifference < 50) return 40;
-  // 差異小於 70% 得 20 分
   if (percentageDifference < 70) return 20;
-  // 差異過大 得 10 分
   return 10;
 };
 
-// 格式化數字為易讀形式，例如：1,234,567
 export const formatNumber = (num: number): string => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
