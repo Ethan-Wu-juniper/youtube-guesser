@@ -108,7 +108,7 @@ const Game = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <div className="flex justify-center rounded-lg overflow-hidden shadow-lg relative w-fit">
+          <div className="flex justify-center rounded-lg overflow-hidden shadow-lg relative w-fit mx-auto">
             {gameState.status === 'loading' ? (
               <div className="bg-neutral-200 h-[390px] w-[640px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
