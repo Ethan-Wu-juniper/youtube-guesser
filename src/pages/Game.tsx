@@ -99,9 +99,6 @@ const Game = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-neutral-900">
-            YouTube Guesser
-          </CardTitle>
           <div className="mt-2 text-sm text-neutral-500">
             總分: {gameState.score} | 回合: {gameState.attempts}
           </div>
@@ -200,18 +197,6 @@ const Game = () => {
             </div>
           )}
         </CardContent>
-        
-        <CardFooter className="justify-between flex-wrap gap-4">
-          <Button 
-            variant="ghost"
-            asChild
-          >
-            <Link to="/" className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              返回首頁
-            </Link>
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
