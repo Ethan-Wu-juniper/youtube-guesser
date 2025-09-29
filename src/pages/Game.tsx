@@ -252,17 +252,26 @@ const Game = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
-        <CardHeader className="text-center">
+        <CardHeader className="py-4">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-neutral-500">
-              總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount}
+            <div className="text-lg font-bold text-red-600">
+              總分: {gameState.score}
             </div>
-            {timeLeft !== null && (
-              <div className={`flex items-center gap-1 ${timeLeft <= 5 ? 'text-red-600 font-bold animate-pulse' : 'text-neutral-600'}`}>
-                <Clock className="w-4 h-4" />
-                <span className="text-sm">{timeLeft} 秒</span>
-              </div>
-            )}
+            
+            <div className="flex-1 flex justify-center">
+              {timeLeft !== null ? (
+                <div className={`flex items-center gap-2 ${timeLeft <= 5 ? 'text-red-600 font-bold animate-pulse' : 'text-neutral-700'}`}>
+                  <Clock className="w-5 h-5" />
+                  <span className="text-lg font-bold">{timeLeft} 秒</span>
+                </div>
+              ) : (
+                <div className="text-lg font-bold text-neutral-700">無時限</div>
+              )}
+            </div>
+            
+            <div className="text-lg font-bold text-neutral-700">
+              回合: {gameState.attempts + 1}/{settings.questionCount}
+            </div>
           </div>
         </CardHeader>
         
