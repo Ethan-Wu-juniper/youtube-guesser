@@ -3,6 +3,7 @@ import { VideoData } from "../types";
 export const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const count = 50;
 const LOCAL_STORAGE_KEY = 'youtube_guesser_videos';
+const SETTINGS_KEY = 'youtube_guesser_settings';
 
 function generateRandom() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -16,6 +17,7 @@ function generateRandom() {
 async function searchRandomVideos() {
   const random = generateRandom();
   const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&maxResults=${count}&part=snippet&type=video&q=${random}`;
+  console.log("Searching new videos :", random);
   
   try {
     const response = await fetch(url);
@@ -52,9 +54,36 @@ export const storeVideos = (videos: VideoData[]) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(videos));
 };
 
+// 儲存遊戲設置到 localStorage
+export const storeGameSettings = (settings: { questionCount: number; forceRefresh: boolean }) => {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+};
+
+// 獲取遊戲設置
+export const getGameSettings = () => {
+  const settingsData = localStorage.getItem(SETTINGS_KEY);
+  if (settingsData) {
+    try {
+      return JSON.parse(settingsData);
+    } catch (e) {
+      console.error('解析遊戲設置時出錯', e);
+      return { questionCount: 10, forceRefresh: false };
+    }
+  }
+  return { questionCount: 10, forceRefresh: false };
+};
+
 // 批量獲取影片資訊
-export const fetchVideosBatch = async (): Promise<VideoData[]> => {
+export const fetchVideosBatch = async (forceRefresh = false): Promise<VideoData[]> => {
   try {
+    // 如果不是強制刷新且已有儲存的影片，則直接返回
+    if (!forceRefresh) {
+      const storedVideos = getStoredVideos();
+      if (storedVideos.length > 0) {
+        return storedVideos;
+      }
+    }
+    
     if (!API_KEY) {
       console.error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
       return [DEFAULT_VIDEO_DATA];

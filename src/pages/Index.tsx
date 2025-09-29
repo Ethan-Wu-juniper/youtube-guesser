@@ -1,24 +1,46 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Youtube } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { fetchVideosBatch, getStoredVideos } from "@/lib/services/videoService";
-import { useState } from "react";
+import { ArrowRight, Youtube, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { 
+  fetchVideosBatch, 
+  getStoredVideos, 
+  getGameSettings, 
+  storeGameSettings 
+} from "@/lib/services/videoService";
+import { useState, useEffect } from "react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { GameSettings } from "@/lib/types";
 
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState<GameSettings>({
+    questionCount: 10,
+    forceRefresh: false
+  });
+  
+  // 載入已保存的設置
+  useEffect(() => {
+    const savedSettings = getGameSettings();
+    setSettings(savedSettings);
+  }, []);
   
   const handleStartGame = async () => {
     setIsLoading(true);
     
     try {
+      // 儲存目前的設置
+      storeGameSettings(settings);
+      
       // 檢查是否已經有儲存的影片
       const storedVideos = getStoredVideos();
       
-      // 如果沒有儲存的影片，才進行搜尋
-      if (storedVideos.length === 0) {
-        await fetchVideosBatch();
+      // 如果沒有儲存的影片或用戶選擇強制刷新，才進行搜尋
+      if (storedVideos.length === 0 || settings.forceRefresh) {
+        await fetchVideosBatch(settings.forceRefresh);
       }
       
       navigate('/game');
@@ -48,9 +70,54 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="pt-2">
+          <div className="space-y-6 pt-2">
+            <div className="space-y-4 text-left">
+              <div className="font-medium text-neutral-800">
+                題目數量
+              </div>
+              <RadioGroup 
+                value={settings.questionCount.toString()} 
+                onValueChange={(value) => setSettings(prev => ({ ...prev, questionCount: parseInt(value) }))}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="5" id="q5" />
+                  <Label htmlFor="q5">5 題</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="10" id="q10" />
+                  <Label htmlFor="q10">10 題</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="50" id="q50" />
+                  <Label htmlFor="q50">50 題</Label>
+                </div>
+              </RadioGroup>
+              
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  <div className="font-medium text-neutral-800">使用 API 生成新影片</div>
+                  <p className="text-sm text-neutral-500">
+                    {settings.forceRefresh 
+                      ? '將重新搜尋新影片' 
+                      : '有已儲存影片時將優先使用'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    checked={settings.forceRefresh}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, forceRefresh: checked }))}
+                    id="force-refresh"
+                  />
+                  <Label htmlFor="force-refresh" className="text-neutral-500">
+                    {settings.forceRefresh && <RefreshCw className="w-4 h-4 text-red-600" />}
+                  </Label>
+                </div>
+              </div>
+            </div>
+            
             <Button 
-              className="group bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="group bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full"
               onClick={handleStartGame}
               disabled={isLoading}
             >

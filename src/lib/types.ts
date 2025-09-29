@@ -11,3 +11,8 @@ export interface GameState {
   score: number;
   attempts: number;
 }
+
+export interface GameSettings {
+  questionCount: number;
+  forceRefresh: boolean;
+}

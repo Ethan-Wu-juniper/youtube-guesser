@@ -7,7 +7,13 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
 import { GameState } from "@/lib/types";
-import { getRandomVideo, calculateScore, formatNumber, getStoredVideos } from "@/lib/services/videoService";
+import { 
+  getRandomVideo, 
+  calculateScore, 
+  formatNumber, 
+  getStoredVideos, 
+  getGameSettings 
+} from "@/lib/services/videoService";
 
 const Game = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -22,15 +28,22 @@ const Game = () => {
   const [usedIndices, setUsedIndices] = useState<number[]>([]);
   // 總影片數
   const [totalVideos, setTotalVideos] = useState<number>(0);
+  // 遊戲設置
+  const [settings, setSettings] = useState({ questionCount: 10, forceRefresh: false });
+  // 是否遊戲結束
+  const [gameOver, setGameOver] = useState(false);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const [guessValue, setGuessValue] = useState<string>('');
   const playerRef = useRef<any>(null);
   
-  // 在組件載入時獲取總影片數
+  // 在組件載入時獲取總影片數和遊戲設置
   useEffect(() => {
     const videos = getStoredVideos();
     setTotalVideos(videos.length);
+    
+    const savedSettings = getGameSettings();
+    setSettings(savedSettings);
   }, []);
   
   const fetchRandomVideo = async () => {
@@ -114,7 +127,14 @@ const Game = () => {
   };
   
   const handleNextRound = () => {
-    fetchRandomVideo();
+    // 檢查是否達到題目數量限制
+    if (gameState.attempts >= settings.questionCount - 1) {
+      // 已經完成所有題目
+      setGameOver(true);
+    } else {
+      // 繼續下一題
+      fetchRandomVideo();
+    }
   };
   
   const handleGuessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,7 +171,7 @@ const Game = () => {
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
         <CardHeader className="text-center">
           <div className="mt-2 text-sm text-neutral-500">
-            總分: {gameState.score} | 回合: {gameState.attempts} | 影片庫: {usedIndices.length}/{totalVideos || '?'}
+            總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount} | 影片庫: {usedIndices.length}/{totalVideos || '?'}
           </div>
         </CardHeader>
         
@@ -239,12 +259,50 @@ const Game = () => {
                 </div>
               </div>
               
-              <Button 
-                onClick={handleNextRound}
-                className="bg-red-600 hover:bg-red-700 text-white px-8"
-              >
-                下一個影片
-              </Button>
+              {gameOver ? (
+                <div className="space-y-4">
+                  <div className="text-xl font-bold text-red-600">
+                    遊戲結束！
+                  </div>
+                  <div className="text-lg">
+                    總分: <span className="font-bold">{gameState.score}</span>
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    <Button 
+                      asChild
+                      className="bg-neutral-600 hover:bg-neutral-700 text-white px-8"
+                    >
+                      <Link to="/">
+                        回首頁
+                      </Link>
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setGameOver(false);
+                        setGameState({
+                          status: 'loading',
+                          currentVideo: null,
+                          userGuess: null,
+                          score: 0,
+                          attempts: 0
+                        });
+                        setUsedIndices([]);
+                        fetchRandomVideo();
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white px-8"
+                    >
+                      再玩一次
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button 
+                  onClick={handleNextRound}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8"
+                >
+                  下一個影片
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
