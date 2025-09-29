@@ -28,34 +28,20 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     attempts: 0
   });
   
-  // 用來追蹤已經使用過的影片索引
   const [usedIndices, setUsedIndices] = useState<number[]>([]);
-  // 總影片數
-  const [totalVideos, setTotalVideos] = useState<number>(0);
-  // 遊戲設置
   const [settings, setSettings] = useState({ 
     questionCount, 
     forceRefresh: false, 
     timeLimit 
   });
-  // 是否遊戲結束
   const [gameOver, setGameOver] = useState(false);
-  // 倒計時
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  // 倒計時間隔ID
   const timerIntervalRef = useRef<number | null>(null);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const [guessValue, setGuessValue] = useState<string>('');
   const playerRef = useRef<any>(null);
   
-  // 在組件載入時獲取總影片數
-  useEffect(() => {
-    const videos = getStoredVideos();
-    setTotalVideos(videos.length);
-  }, []);
-  
-  // 當 props 變化時更新設置
   useEffect(() => {
     setSettings(prev => ({
       ...prev,
@@ -64,24 +50,19 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     }));
   }, [questionCount, timeLimit]);
   
-  // 開始倒計時
   const startTimer = () => {
-    // 清除之前的計時器
     if (timerIntervalRef.current !== null) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
     
-    // 如果沒有時間限制，不啟動計時器
     if (settings.timeLimit === null) {
       setTimeLeft(null);
       return;
     }
     
-    // 設置初始時間
     setTimeLeft(settings.timeLimit);
     
-    // 開始計時
     timerIntervalRef.current = window.setInterval(() => {
       setTimeLeft(prev => {
         if (prev === null) return null;
