@@ -9,6 +9,7 @@ import {
   storeGameSettings 
 } from "@/lib/services/videoService";
 import { useState, useEffect } from "react";
+import { Clock } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +20,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [settings, setSettings] = useState<GameSettings>({
     questionCount: 10,
-    forceRefresh: false
+    forceRefresh: false,
+    timeLimit: null
   });
   
   // 載入已保存的設置
@@ -91,6 +93,32 @@ const Index = () => {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="50" id="q50" />
                   <Label htmlFor="q50">50 題</Label>
+                </div>
+              </RadioGroup>
+              
+              <div className="font-medium text-neutral-800 mt-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-red-600" />
+                <span>時間限制</span>
+              </div>
+              <RadioGroup 
+                value={settings.timeLimit === null ? "null" : settings.timeLimit?.toString()} 
+                onValueChange={(value) => setSettings(prev => ({ 
+                  ...prev, 
+                  timeLimit: value === "null" ? null : parseInt(value) 
+                }))}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="15" id="t15" />
+                  <Label htmlFor="t15">15 秒</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="30" id="t30" />
+                  <Label htmlFor="t30">30 秒</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="null" id="tNone" />
+                  <Label htmlFor="tNone">無時限</Label>
                 </div>
               </RadioGroup>
               

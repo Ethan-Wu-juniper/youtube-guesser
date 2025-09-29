@@ -55,7 +55,7 @@ export const storeVideos = (videos: VideoData[]) => {
 };
 
 // 儲存遊戲設置到 localStorage
-export const storeGameSettings = (settings: { questionCount: number; forceRefresh: boolean }) => {
+export const storeGameSettings = (settings: { questionCount: number; forceRefresh: boolean; timeLimit: number | null }) => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 };
 
@@ -67,10 +67,10 @@ export const getGameSettings = () => {
       return JSON.parse(settingsData);
     } catch (e) {
       console.error('解析遊戲設置時出錯', e);
-      return { questionCount: 10, forceRefresh: false };
+      return { questionCount: 10, forceRefresh: false, timeLimit: null };
     }
   }
-  return { questionCount: 10, forceRefresh: false };
+  return { questionCount: 10, forceRefresh: false, timeLimit: null };
 };
 
 // 批量獲取影片資訊

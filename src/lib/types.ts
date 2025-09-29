@@ -15,4 +15,5 @@ export interface GameState {
 export interface GameSettings {
   questionCount: number;
   forceRefresh: boolean;
+  timeLimit: number | null; // 秒數，null 表示無時限
 }

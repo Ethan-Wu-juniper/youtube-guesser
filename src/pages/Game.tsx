@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
@@ -29,9 +29,13 @@ const Game = () => {
   // 總影片數
   const [totalVideos, setTotalVideos] = useState<number>(0);
   // 遊戲設置
-  const [settings, setSettings] = useState({ questionCount: 10, forceRefresh: false });
+  const [settings, setSettings] = useState({ questionCount: 10, forceRefresh: false, timeLimit: null });
   // 是否遊戲結束
   const [gameOver, setGameOver] = useState(false);
+  // 倒計時
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  // 倒計時間隔ID
+  const timerIntervalRef = useRef<number | null>(null);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const [guessValue, setGuessValue] = useState<string>('');
@@ -46,7 +50,70 @@ const Game = () => {
     setSettings(savedSettings);
   }, []);
   
+  // 開始倒計時
+  const startTimer = () => {
+    // 清除之前的計時器
+    if (timerIntervalRef.current !== null) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    
+    // 如果沒有時間限制，不啟動計時器
+    if (settings.timeLimit === null) {
+      setTimeLeft(null);
+      return;
+    }
+    
+    // 設置初始時間
+    setTimeLeft(settings.timeLimit);
+    
+    // 開始計時
+    timerIntervalRef.current = window.setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null) return null;
+        
+        if (prev <= 1) {
+          // 時間到，清除計時器並自動提交答案
+          clearInterval(timerIntervalRef.current!);
+          timerIntervalRef.current = null;
+          
+          // 如果用戶還沒提交答案，自動提交 (以0為猜測值)
+          if (gameState.status === 'playing') {
+            handleTimeUp();
+          }
+          return 0;
+        } 
+        
+        // 如果剩餘時間是 6 秒，且當前狀態是結果頁面，自動進入下一題
+        if (prev === 6 && gameState.status === 'result') {
+          handleNextRound();
+        }
+        
+        return prev - 1;
+      });
+    }, 1000) as unknown as number;
+  };
+  
+  // 時間到自動提交
+  const handleTimeUp = () => {
+    if (!gameState.currentVideo) return;
+    
+    // 使用 0 作為猜測值
+    const score = calculateScore(0, gameState.currentVideo.viewCount);
+    
+    setGameState(prev => ({
+      ...prev,
+      status: 'result',
+      userGuess: 0,
+      score: prev.score + score,
+      attempts: prev.attempts + 1
+    }));
+    
+    setGuessValue('');
+  };
+
   const fetchRandomVideo = async () => {
+    // 重置所有狀態
     setGameState(prev => ({
       ...prev,
       status: 'loading',
@@ -90,6 +157,9 @@ const Game = () => {
         status: 'playing',
         currentVideo: video
       }));
+      
+      // 開始倒計時
+      startTimer();
     } catch (error) {
       console.error("獲取影片時出錯:", error);
       // 如果出錯，使用傳統方法獲取影片
@@ -104,6 +174,13 @@ const Game = () => {
   
   useEffect(() => {
     fetchRandomVideo();
+    
+    // 清理計時器
+    return () => {
+      if (timerIntervalRef.current !== null) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
   }, []);
   
   const handleGuessSubmit = () => {
@@ -124,6 +201,12 @@ const Game = () => {
     }));
     
     setGuessValue('');
+    
+    // 如果是在倒計時的情況下，在結果顯示 5 秒後自動進入下一題
+    if (settings.timeLimit !== null) {
+      // 重新設置倒計時為 5 秒，用於自動進入下一題
+      setTimeLeft(5);
+    }
   };
   
   const handleNextRound = () => {
@@ -170,8 +253,16 @@ const Game = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
         <CardHeader className="text-center">
-          <div className="mt-2 text-sm text-neutral-500">
-            總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount}
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-neutral-500">
+              總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount}
+            </div>
+            {timeLeft !== null && (
+              <div className={`flex items-center gap-1 ${timeLeft <= 5 ? 'text-red-600 font-bold animate-pulse' : 'text-neutral-600'}`}>
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">{timeLeft} 秒</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         
