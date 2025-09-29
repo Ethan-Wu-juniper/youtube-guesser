@@ -120,7 +120,7 @@ export const fetchVideosBatch = async (forceRefresh = false): Promise<VideoData[
   }
 };
 
-async function getVideoInfo(videoId: string) {
+export async function getVideoInfo(videoId: string) {
   const url = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoId}`;
   
   try {
