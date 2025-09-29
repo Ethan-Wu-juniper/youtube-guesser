@@ -56,7 +56,6 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
   const handleGuessSubmit = () => {
     const score = calculateScore(guessValue, viewCount);
     setScore(prev => prev + score);
-    setGuessValue(0);
     setStatus("result");
     startTimer(5, handleNextRound);
   };
