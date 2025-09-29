@@ -171,7 +171,7 @@ const Game = () => {
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
         <CardHeader className="text-center">
           <div className="mt-2 text-sm text-neutral-500">
-            總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount} | 影片庫: {usedIndices.length}/{totalVideos || '?'}
+            總分: {gameState.score} | 回合: {gameState.attempts + 1}/{settings.questionCount}
           </div>
         </CardHeader>
         
