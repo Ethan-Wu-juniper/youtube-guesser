@@ -1,9 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Youtube } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { fetchVideosBatch, getStoredVideos } from "@/lib/services/videoService";
+import { useState } from "react";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleStartGame = async () => {
+    setIsLoading(true);
+    
+    try {
+      // 檢查是否已經有儲存的影片
+      const storedVideos = getStoredVideos();
+      
+      // 如果沒有儲存的影片，才進行搜尋
+      if (storedVideos.length === 0) {
+        await fetchVideosBatch();
+      }
+      
+      navigate('/game');
+    } catch (error) {
+      console.error("開始遊戲時出錯:", error);
+      // 即使出錯也進入遊戲，遊戲邏輯會使用預設影片
+      navigate('/game');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
@@ -24,12 +51,13 @@ const Index = () => {
           <div className="pt-2">
             <Button 
               className="group bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              asChild
+              onClick={handleStartGame}
+              disabled={isLoading}
             >
-              <Link to="/game" className="flex items-center gap-2">
-                開始遊戲
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-              </Link>
+              <div className="flex items-center gap-2">
+                {isLoading ? '載入影片中...' : '開始遊戲'}
+                {!isLoading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />}
+              </div>
             </Button>
           </div>
         </CardContent>

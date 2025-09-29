@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
 import { GameState } from "@/lib/types";
-import { getRandomVideo, calculateScore, formatNumber } from "@/lib/services/videoService";
+import { getRandomVideo, calculateScore, formatNumber, getStoredVideos } from "@/lib/services/videoService";
 
 const Game = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -18,9 +18,20 @@ const Game = () => {
     attempts: 0
   });
   
+  // 用來追蹤已經使用過的影片索引
+  const [usedIndices, setUsedIndices] = useState<number[]>([]);
+  // 總影片數
+  const [totalVideos, setTotalVideos] = useState<number>(0);
+  
   const guessInputRef = useRef<HTMLInputElement>(null);
   const [guessValue, setGuessValue] = useState<string>('');
   const playerRef = useRef<any>(null);
+  
+  // 在組件載入時獲取總影片數
+  useEffect(() => {
+    const videos = getStoredVideos();
+    setTotalVideos(videos.length);
+  }, []);
   
   const fetchRandomVideo = async () => {
     setGameState(prev => ({
@@ -30,12 +41,52 @@ const Game = () => {
       userGuess: null
     }));
     
-    const video = await getRandomVideo();
-    setGameState(prev => ({
-      ...prev,
-      status: 'playing',
-      currentVideo: video
-    }));
+    try {
+      const videos = getStoredVideos();
+      
+      // 如果所有影片都已經使用過或沒有儲存的影片
+      if (usedIndices.length >= videos.length) {
+        // 如果已經使用過所有儲存的影片，則重置已使用索引
+        setUsedIndices([]);
+      }
+      
+      // 獲取未使用的影片
+      let availableIndices = Array.from({ length: videos.length }, (_, i) => i)
+        .filter(index => !usedIndices.includes(index));
+      
+      // 如果沒有可用的影片索引，直接獲取隨機影片
+      if (availableIndices.length === 0) {
+        const video = await getRandomVideo();
+        setGameState(prev => ({
+          ...prev,
+          status: 'playing',
+          currentVideo: video
+        }));
+        return;
+      }
+      
+      // 從可用索引中隨機選一個
+      const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      const video = videos[randomIndex];
+      
+      // 將使用過的索引加入已使用列表
+      setUsedIndices(prev => [...prev, randomIndex]);
+      
+      setGameState(prev => ({
+        ...prev,
+        status: 'playing',
+        currentVideo: video
+      }));
+    } catch (error) {
+      console.error("獲取影片時出錯:", error);
+      // 如果出錯，使用傳統方法獲取影片
+      const video = await getRandomVideo();
+      setGameState(prev => ({
+        ...prev,
+        status: 'playing',
+        currentVideo: video
+      }));
+    }
   };
   
   useEffect(() => {
@@ -100,7 +151,7 @@ const Game = () => {
       <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl">
         <CardHeader className="text-center">
           <div className="mt-2 text-sm text-neutral-500">
-            總分: {gameState.score} | 回合: {gameState.attempts}
+            總分: {gameState.score} | 回合: {gameState.attempts} | 影片庫: {usedIndices.length}/{totalVideos || '?'}
           </div>
         </CardHeader>
         

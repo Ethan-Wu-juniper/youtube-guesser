@@ -2,6 +2,7 @@ import { VideoData } from "../types";
 
 export const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const count = 50;
+const LOCAL_STORAGE_KEY = 'youtube_guesser_videos';
 
 function generateRandom() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -31,6 +32,64 @@ async function searchRandomVideos() {
     return [];
   }
 }
+
+// 檢查 localStorage 是否有保存的影片資料
+export const getStoredVideos = (): VideoData[] => {
+  const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (storedData) {
+    try {
+      return JSON.parse(storedData);
+    } catch (e) {
+      console.error('解析儲存的影片資料時出錯', e);
+      return [];
+    }
+  }
+  return [];
+};
+
+// 儲存影片資料到 localStorage
+export const storeVideos = (videos: VideoData[]) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(videos));
+};
+
+// 批量獲取影片資訊
+export const fetchVideosBatch = async (): Promise<VideoData[]> => {
+  try {
+    if (!API_KEY) {
+      console.error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
+      return [DEFAULT_VIDEO_DATA];
+    }
+
+    const videoIds = await searchRandomVideos();
+    if (videoIds.length === 0) {
+      console.error("無法獲取影片 ID");
+      return [DEFAULT_VIDEO_DATA];
+    }
+
+    const videos: VideoData[] = [];
+    
+    // 批量獲取影片資訊
+    for (const videoId of videoIds) {
+      const videoInfo = await getVideoInfo(videoId);
+      if (videoInfo) {
+        videos.push(videoInfo as VideoData);
+      }
+    }
+    
+    if (videos.length === 0) {
+      console.error("無法獲取任何影片資訊");
+      return [DEFAULT_VIDEO_DATA];
+    }
+    
+    // 儲存到 localStorage
+    storeVideos(videos);
+    return videos;
+    
+  } catch (error) {
+    console.error("批量獲取影片錯誤:", error);
+    return [DEFAULT_VIDEO_DATA];
+  }
+};
 
 async function getVideoInfo(videoId: string) {
   const url = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoId}`;
@@ -63,6 +122,16 @@ const DEFAULT_VIDEO_DATA: VideoData = {
 };
 
 export const getRandomVideo = async (): Promise<VideoData> => {
+  // 先從 localStorage 中獲取影片
+  const storedVideos = getStoredVideos();
+  
+  // 如果有儲存的影片，直接從中隨機選一個
+  if (storedVideos.length > 0) {
+    const randomIndex = Math.floor(Math.random() * storedVideos.length);
+    return storedVideos[randomIndex];
+  }
+  
+  // 如果沒有儲存的影片，則獲取新的影片
   try {
     if (!API_KEY) {
       console.error("YouTube API Key 未設置，請在 .env 文件中配置 VITE_YOUTUBE_API_KEY");
