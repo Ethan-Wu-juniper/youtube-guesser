@@ -3,11 +3,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Clock } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import YouTube from "react-youtube";
 import { GameState } from "@/lib/types";
 import { 
-  getRandomVideo, 
   calculateScore, 
   formatNumber, 
   getStoredVideos, 
@@ -52,7 +51,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
     }));
   }, [questionCount, timeLimit]);
   
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     if (timerIntervalRef.current !== null) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
@@ -84,7 +83,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
         return prev - 1;
       });
     }, 1000) as unknown as number;
-  };
+  }, [gameState]);
   
   const handleTimeUp = () => {
     if (!gameState.currentVideo) return;
@@ -109,52 +108,29 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
       userGuess: null
     }));
     
-    try {
-      if (index >= videoIds.length) {
-        console.error("索引超出範圍:", index, videoIds.length);
-        return;
-      }
-      
-      const videoId = videoIds[index];
-      const videos = getStoredVideos();
-      
-      const video = videos.find(v => v.id === videoId);
-      
-      if (video) {
-        setGameState(prev => ({
-          ...prev,
-          status: 'playing',
-          currentVideo: video,
-          index: index
-        }));
-      } else {
-        console.error("未找到指定 ID 的視頻:", videoId);
-        const defaultVideo = await getRandomVideo();
-        setGameState(prev => ({
-          ...prev,
-          status: 'playing',
-          currentVideo: defaultVideo,
-          index: index
-        }));
-      }
-      
-      startTimer();
-    } catch (error) {
-      console.error("載入視頻時出錯:", error);
-    }
+    const videoId = videoIds[index];
+    const videos = getStoredVideos();
+    const video = videos.find(v => v.id === videoId);
+    
+    setGameState(prev => ({
+      ...prev,
+      status: 'playing',
+      currentVideo: video,
+      index: index
+    }));
+  
+    startTimer();
   };
   
   useEffect(() => {
-    // 載入第一個題目
     loadVideoByIndex(0);
-    
     return () => {
       if (timerIntervalRef.current !== null) {
         clearInterval(timerIntervalRef.current);
       }
     };
   }, []);
-  
+
   const handleGuessSubmit = () => {
     if (!guessValue || !gameState.currentVideo) return;
     
@@ -183,14 +159,8 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
     if (gameState.attempts >= settings.questionCount - 1) {
       setGameOver(true);
     } else {
-      // 載入下一個題目
       const nextIndex = gameState.index + 1;
-      if (nextIndex < videoIds.length) {
-        loadVideoByIndex(nextIndex);
-      } else {
-        console.error("沒有更多題目了");
-        setGameOver(true);
-      }
+      loadVideoByIndex(nextIndex);
     }
   };
   
