@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Youtube, RefreshCw } from "lucide-react";
 import Game from "./Game";
+import Header from "@/components/common/Header";
 import { 
   fetchVideosBatch, 
   getStoredVideos, 
@@ -62,19 +63,19 @@ const Index = () => {
     setShowGame(false);
   };
   
-  // 如果顯示遊戲頁面，則渲染 Game 組件
-  if (showGame) {
-    return (
-      <Game 
-        questionCount={settings.questionCount}
-        timeLimit={settings.timeLimit}
-        onBackToHome={handleBackToHome}
-      />
-    );
-  }
-  
-  // 否則顯示首頁
+  // 渲染內容
   return (
+    <>
+      <Header inGame={showGame} onBackToHome={handleBackToHome} />
+      
+      {/* 如果顯示遊戲頁面，則渲染 Game 組件 */}
+      {showGame ? (
+        <Game 
+          questionCount={settings.questionCount}
+          timeLimit={settings.timeLimit}
+          onBackToHome={handleBackToHome}
+        />
+      ) : (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
         <CardContent className="p-8 text-center space-y-6">
@@ -177,6 +178,8 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
+      )}
+    </>
   );
 };
 
