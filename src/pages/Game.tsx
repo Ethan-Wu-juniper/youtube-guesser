@@ -6,7 +6,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
-import { GameState } from "@/lib/types";
+import { GameState, GameSettings } from "@/lib/types";
 import { 
   getRandomVideo, 
   calculateScore, 
@@ -15,7 +15,13 @@ import {
   getGameSettings 
 } from "@/lib/services/videoService";
 
-const Game = () => {
+interface GameProps {
+  questionCount: number;
+  timeLimit: number | null;
+  onBackToHome: () => void;
+}
+
+const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
   const [gameState, setGameState] = useState<GameState>({
     status: 'loading',
     currentVideo: null,
@@ -29,7 +35,11 @@ const Game = () => {
   // 總影片數
   const [totalVideos, setTotalVideos] = useState<number>(0);
   // 遊戲設置
-  const [settings, setSettings] = useState({ questionCount: 10, forceRefresh: false, timeLimit: null });
+  const [settings, setSettings] = useState({ 
+    questionCount, 
+    forceRefresh: false, 
+    timeLimit 
+  });
   // 是否遊戲結束
   const [gameOver, setGameOver] = useState(false);
   // 倒計時
@@ -41,14 +51,20 @@ const Game = () => {
   const [guessValue, setGuessValue] = useState<string>('');
   const playerRef = useRef<any>(null);
   
-  // 在組件載入時獲取總影片數和遊戲設置
+  // 在組件載入時獲取總影片數
   useEffect(() => {
     const videos = getStoredVideos();
     setTotalVideos(videos.length);
-    
-    const savedSettings = getGameSettings();
-    setSettings(savedSettings);
   }, []);
+  
+  // 當 props 變化時更新設置
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      questionCount,
+      timeLimit
+    }));
+  }, [questionCount, timeLimit]);
   
   // 開始倒計時
   const startTimer = () => {
@@ -369,12 +385,10 @@ const Game = () => {
                   </div>
                   <div className="flex gap-4 justify-center">
                     <Button 
-                      asChild
+                      onClick={onBackToHome}
                       className="bg-neutral-600 hover:bg-neutral-700 text-white px-8"
                     >
-                      <Link to="/">
-                        回首頁
-                      </Link>
+                      回首頁
                     </Button>
                     <Button 
                       onClick={() => {

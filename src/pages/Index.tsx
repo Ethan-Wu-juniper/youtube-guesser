@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Youtube, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import Game from "./Game";
 import { 
   fetchVideosBatch, 
   getStoredVideos, 
@@ -16,13 +16,14 @@ import { Switch } from "@/components/ui/switch";
 import { GameSettings } from "@/lib/types";
 
 const Index = () => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [settings, setSettings] = useState<GameSettings>({
     questionCount: 10,
     forceRefresh: false,
     timeLimit: null
   });
+  // 是否顯示遊戲頁面
+  const [showGame, setShowGame] = useState(false);
   
   // 載入已保存的設置
   useEffect(() => {
@@ -45,16 +46,34 @@ const Index = () => {
         await fetchVideosBatch(settings.forceRefresh);
       }
       
-      navigate('/game');
+      // 顯示遊戲頁面
+      setShowGame(true);
     } catch (error) {
       console.error("開始遊戲時出錯:", error);
-      // 即使出錯也進入遊戲，遊戲邏輯會使用預設影片
-      navigate('/game');
+      // 即使出錯也進入遊戲
+      setShowGame(true);
     } finally {
       setIsLoading(false);
     }
   };
   
+  // 返回首頁
+  const handleBackToHome = () => {
+    setShowGame(false);
+  };
+  
+  // 如果顯示遊戲頁面，則渲染 Game 組件
+  if (showGame) {
+    return (
+      <Game 
+        questionCount={settings.questionCount}
+        timeLimit={settings.timeLimit}
+        onBackToHome={handleBackToHome}
+      />
+    );
+  }
+  
+  // 否則顯示首頁
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
