@@ -17,15 +17,17 @@ interface GameProps {
   questionCount: number;
   timeLimit: number | null;
   onBackToHome: () => void;
+  videoIds: string[];
 }
 
-const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
+const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) => {
   const [gameState, setGameState] = useState<GameState>({
     status: 'loading',
     currentVideo: null,
     userGuess: null,
     score: 0,
-    attempts: 0
+    attempts: 0,
+    index: 0
   });
   
   const [usedIndices, setUsedIndices] = useState<number[]>([]);
@@ -65,9 +67,11 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     
     timerIntervalRef.current = window.setInterval(() => {
       setTimeLeft(prev => {
+        console.log("time left :", prev, gameState.status)
         if (prev === null) return null;
         
         if (prev <= 1) {
+          console.log("submit")
           clearInterval(timerIntervalRef.current!);
           timerIntervalRef.current = null;
           
@@ -97,8 +101,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     setGuessValue('');
   };
 
-  const fetchRandomVideo = async () => {
-    // 重置所有狀態
+  const loadVideoByIndex = async (index: number) => {
     setGameState(prev => ({
       ...prev,
       status: 'loading',
@@ -107,49 +110,43 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     }));
     
     try {
-      const videos = getStoredVideos();
-      if (usedIndices.length >= videos.length) {
-        setUsedIndices([]);
-      }
-      
-      let availableIndices = Array.from({ length: videos.length }, (_, i) => i)
-        .filter(index => !usedIndices.includes(index));
-      
-      if (availableIndices.length === 0) {
-        const video = await getRandomVideo();
-        setGameState(prev => ({
-          ...prev,
-          status: 'playing',
-          currentVideo: video
-        }));
+      if (index >= videoIds.length) {
+        console.error("索引超出範圍:", index, videoIds.length);
         return;
       }
       
-      const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-      const video = videos[randomIndex];
+      const videoId = videoIds[index];
+      const videos = getStoredVideos();
       
-      setUsedIndices(prev => [...prev, randomIndex]);
+      const video = videos.find(v => v.id === videoId);
       
-      setGameState(prev => ({
-        ...prev,
-        status: 'playing',
-        currentVideo: video
-      }));
+      if (video) {
+        setGameState(prev => ({
+          ...prev,
+          status: 'playing',
+          currentVideo: video,
+          index: index
+        }));
+      } else {
+        console.error("未找到指定 ID 的視頻:", videoId);
+        const defaultVideo = await getRandomVideo();
+        setGameState(prev => ({
+          ...prev,
+          status: 'playing',
+          currentVideo: defaultVideo,
+          index: index
+        }));
+      }
       
       startTimer();
     } catch (error) {
-      console.error("獲取影片時出錯:", error);
-      const video = await getRandomVideo();
-      setGameState(prev => ({
-        ...prev,
-        status: 'playing',
-        currentVideo: video
-      }));
+      console.error("載入視頻時出錯:", error);
     }
   };
   
   useEffect(() => {
-    fetchRandomVideo();
+    // 載入第一個題目
+    loadVideoByIndex(0);
     
     return () => {
       if (timerIntervalRef.current !== null) {
@@ -186,7 +183,14 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     if (gameState.attempts >= settings.questionCount - 1) {
       setGameOver(true);
     } else {
-      fetchRandomVideo();
+      // 載入下一個題目
+      const nextIndex = gameState.index + 1;
+      if (nextIndex < videoIds.length) {
+        loadVideoByIndex(nextIndex);
+      } else {
+        console.error("沒有更多題目了");
+        setGameOver(true);
+      }
     }
   };
   
@@ -352,10 +356,11 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
                           currentVideo: null,
                           userGuess: null,
                           score: 0,
-                          attempts: 0
+                          attempts: 0,
+                          index: 0
                         });
                         setUsedIndices([]);
-                        fetchRandomVideo();
+                        loadVideoByIndex(0);
                       }}
                       className="bg-red-600 hover:bg-red-700 text-white px-8"
                     >

@@ -9,7 +9,7 @@ import {
   getGameSettings, 
   storeGameSettings 
 } from "@/lib/services/videoService";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Clock } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ const Index = () => {
   });
   // 是否顯示遊戲頁面
   const [showGame, setShowGame] = useState(false);
+  const [videoIds, setVideoIds] = useState<string[]>([]);
   
   // 載入已保存的設置
   useEffect(() => {
@@ -36,44 +37,42 @@ const Index = () => {
     setIsLoading(true);
     
     try {
-      // 儲存目前的設置
       storeGameSettings(settings);
       
-      // 檢查是否已經有儲存的影片
-      const storedVideos = getStoredVideos();
-      
-      // 如果沒有儲存的影片或用戶選擇強制刷新，才進行搜尋
+      let storedVideos = getStoredVideos();
       if (storedVideos.length === 0 || settings.forceRefresh) {
-        await fetchVideosBatch(settings.forceRefresh);
+        storedVideos = await fetchVideosBatch(settings.forceRefresh);
       }
       
-      // 顯示遊戲頁面
+      const videoCount = Math.min(settings.questionCount, storedVideos.length);
+      
+      const shuffledVideos = [...storedVideos].sort(() => Math.random() - 0.5);
+      const gameVideoIds = shuffledVideos.slice(0, videoCount).map(video => video.id);
+      
+      setVideoIds(gameVideoIds);
+      
       setShowGame(true);
     } catch (error) {
       console.error("開始遊戲時出錯:", error);
-      // 即使出錯也進入遊戲
       setShowGame(true);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // 返回首頁
   const handleBackToHome = () => {
     setShowGame(false);
   };
   
-  // 渲染內容
   return (
     <>
       <Header inGame={showGame} onBackToHome={handleBackToHome} />
-      
-      {/* 如果顯示遊戲頁面，則渲染 Game 組件 */}
       {showGame ? (
         <Game 
           questionCount={settings.questionCount}
           timeLimit={settings.timeLimit}
           onBackToHome={handleBackToHome}
+          videoIds={videoIds}
         />
       ) : (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
