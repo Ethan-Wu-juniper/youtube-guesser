@@ -1,18 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Clock } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
-import { GameState, GameSettings } from "@/lib/types";
+import { GameState } from "@/lib/types";
 import { 
   getRandomVideo, 
   calculateScore, 
   formatNumber, 
   getStoredVideos, 
-  getGameSettings 
 } from "@/lib/services/videoService";
 
 interface GameProps {
@@ -89,32 +87,22 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
         if (prev === null) return null;
         
         if (prev <= 1) {
-          // 時間到，清除計時器並自動提交答案
           clearInterval(timerIntervalRef.current!);
           timerIntervalRef.current = null;
           
-          // 如果用戶還沒提交答案，自動提交 (以0為猜測值)
           if (gameState.status === 'playing') {
             handleTimeUp();
           }
           return 0;
         } 
         
-        // 如果剩餘時間是 6 秒，且當前狀態是結果頁面，自動進入下一題
-        if (prev === 6 && gameState.status === 'result') {
-          handleNextRound();
-        }
-        
         return prev - 1;
       });
     }, 1000) as unknown as number;
   };
   
-  // 時間到自動提交
   const handleTimeUp = () => {
     if (!gameState.currentVideo) return;
-    
-    // 使用 0 作為猜測值
     const score = calculateScore(0, gameState.currentVideo.viewCount);
     
     setGameState(prev => ({
@@ -139,18 +127,13 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     
     try {
       const videos = getStoredVideos();
-      
-      // 如果所有影片都已經使用過或沒有儲存的影片
       if (usedIndices.length >= videos.length) {
-        // 如果已經使用過所有儲存的影片，則重置已使用索引
         setUsedIndices([]);
       }
       
-      // 獲取未使用的影片
       let availableIndices = Array.from({ length: videos.length }, (_, i) => i)
         .filter(index => !usedIndices.includes(index));
       
-      // 如果沒有可用的影片索引，直接獲取隨機影片
       if (availableIndices.length === 0) {
         const video = await getRandomVideo();
         setGameState(prev => ({
@@ -161,11 +144,9 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
         return;
       }
       
-      // 從可用索引中隨機選一個
       const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
       const video = videos[randomIndex];
       
-      // 將使用過的索引加入已使用列表
       setUsedIndices(prev => [...prev, randomIndex]);
       
       setGameState(prev => ({
@@ -174,11 +155,9 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
         currentVideo: video
       }));
       
-      // 開始倒計時
       startTimer();
     } catch (error) {
       console.error("獲取影片時出錯:", error);
-      // 如果出錯，使用傳統方法獲取影片
       const video = await getRandomVideo();
       setGameState(prev => ({
         ...prev,
@@ -191,7 +170,6 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
   useEffect(() => {
     fetchRandomVideo();
     
-    // 清理計時器
     return () => {
       if (timerIntervalRef.current !== null) {
         clearInterval(timerIntervalRef.current);
@@ -218,20 +196,15 @@ const Game = ({ questionCount, timeLimit, onBackToHome }: GameProps) => {
     
     setGuessValue('');
     
-    // 如果是在倒計時的情況下，在結果顯示 5 秒後自動進入下一題
     if (settings.timeLimit !== null) {
-      // 重新設置倒計時為 5 秒，用於自動進入下一題
       setTimeLeft(5);
     }
   };
   
   const handleNextRound = () => {
-    // 檢查是否達到題目數量限制
     if (gameState.attempts >= settings.questionCount - 1) {
-      // 已經完成所有題目
       setGameOver(true);
     } else {
-      // 繼續下一題
       fetchRandomVideo();
     }
   };
