@@ -41,7 +41,7 @@ export const GameResult = ({
       <div className="text-center space-y-4 pt-6">
         <h2 className="text-2xl font-bold text-red-600">遊戲結束！</h2>
         <p className="text-xl">
-          總分: <span className="font-bold">{totalScore}</span>
+          總分: <span className="font-bold">{totalScore} / {results.length * 100}</span>
         </p>
       </div>
       

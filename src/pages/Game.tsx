@@ -157,7 +157,7 @@ const Game = ({
                 </div>
 
                 <div className="flex-1 flex justify-center">
-                  {timeLeft !== null ? (
+                  {timeLeft !== null && (
                     <div
                       className={`flex items-center gap-2 ${
                         timeLeft <= 5
@@ -169,10 +169,6 @@ const Game = ({
                       <span className="text-lg font-bold">
                         {timeLeft} 秒{status == "result" && "後開始下一題"}
                       </span>
-                    </div>
-                  ) : (
-                    <div className="text-lg font-bold text-neutral-700">
-                      無時限
                     </div>
                   )}
                 </div>
@@ -257,7 +253,7 @@ const Game = ({
                       )}
                       <span>本輪得分:</span>
                       <span className="text-xl font-bold ml-2">
-                        +{calculateScore(guessValue || 0, viewCount)}
+                        {calculateScore(guessValue || 0, viewCount)} / 100
                       </span>
                     </div>
                   </div>
