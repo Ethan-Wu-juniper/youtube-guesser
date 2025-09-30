@@ -76,7 +76,7 @@ const Game = ({
     ]);
 
     setStatus("result");
-    startTimer(5, handleNextRound);
+    if (timeLimit !== null) startTimer(5, handleNextRound);
   };
 
   const handleNextRound = async () => {
@@ -84,7 +84,7 @@ const Game = ({
       setGameOver(true);
     } else {
       setStatus("playing");
-      startTimer(timeLimit, handleGuessSubmit);
+      if (timeLimit !== null) startTimer(timeLimit, handleGuessSubmit);
       videoIndex.current += 1;
       const info = await getVideoInfo(videoIds[videoIndex.current]);
       setViewCount(info.viewCount);
