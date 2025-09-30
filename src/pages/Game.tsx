@@ -10,6 +10,7 @@ import {
   formatNumber, 
   getVideoInfo
 } from "@/lib/services/videoService";
+import { GameResult, GameRoundResult } from "@/components/common/GameResult";
 
 interface GameProps {
   questionCount: number;
@@ -24,6 +25,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
   const [guessValue, setGuessValue] = useState<number>(0);
   const [status, setStatus] = useState<"playing" | "result">("playing");
   const [viewCount, setViewCount] = useState<number>(0);
+  const [videoTitle, setVideoTitle] = useState<string>("");
 
   const [gameOver, setGameOver] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -31,6 +33,9 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const playerRef = useRef<any>(null);
+  
+  // 追踪每輪的結果
+  const [roundResults, setRoundResults] = useState<GameRoundResult[]>([]);
   
   const startTimer = (
     startFrom: number,
@@ -54,8 +59,17 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
   };
   
   const handleGuessSubmit = () => {
-    const score = calculateScore(guessValue, viewCount);
-    setScore(prev => prev + score);
+    const roundScore = calculateScore(guessValue, viewCount);
+    setScore(prev => prev + roundScore);
+    
+    // 保存這一輪的結果
+    setRoundResults(prev => [...prev, {
+      videoId: videoIds[videoIndex.current],
+      videoTitle: videoTitle,
+      guess: guessValue,
+      actual: viewCount
+    }]);
+    
     setStatus("result");
     startTimer(5, handleNextRound);
   };
@@ -69,6 +83,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
       videoIndex.current += 1;
       const info = await getVideoInfo(videoIds[videoIndex.current]);
       setViewCount(info.viewCount);
+      setVideoTitle(info.title || "");
     }
   };
 
@@ -80,6 +95,14 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
       }
     };
   }, []);
+
+  const handlePlayAgain = () => {
+    setGameOver(false);
+    setScore(0);
+    setRoundResults([]);
+    videoIndex.current = -1;
+    handleNextRound();
+  };
 
 
 
@@ -214,33 +237,12 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
               </div>
               
               {gameOver ? (
-                <div className="space-y-4">
-                  <div className="text-xl font-bold text-red-600">
-                    遊戲結束！
-                  </div>
-                  <div className="text-lg">
-                    總分: <span className="font-bold">{score}</span>
-                  </div>
-                  <div className="flex gap-4 justify-center">
-                    <Button 
-                      onClick={onBackToHome}
-                      className="bg-neutral-600 hover:bg-neutral-700 text-white px-8"
-                    >
-                      回首頁
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        setGameOver(false);
-                        setScore(0);
-                        videoIndex.current = -1;
-                        handleNextRound();
-                      }}
-                      className="bg-red-600 hover:bg-red-700 text-white px-8"
-                    >
-                      再玩一次
-                    </Button>
-                  </div>
-                </div>
+                <GameResult 
+                  results={roundResults}
+                  totalScore={score}
+                  onPlayAgain={handlePlayAgain}
+                  onBackToHome={onBackToHome}
+                />
               ) : (
                 <Button 
                   onClick={handleNextRound}
