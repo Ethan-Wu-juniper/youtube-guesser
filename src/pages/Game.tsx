@@ -20,7 +20,7 @@ interface GameProps {
 
 const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) => {
   const [score, setScore] = useState<number>(0);
-  const [videoIndex, setVideoIndex] = useState<number>(-1);
+  const videoIndex = useRef(-1);
   const [guessValue, setGuessValue] = useState<number>(0);
   const [status, setStatus] = useState<"playing" | "result">("playing");
   const [viewCount, setViewCount] = useState<number>(0);
@@ -61,14 +61,14 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
   };
 
   const handleNextRound = async () => {
-    if (videoIndex >= questionCount - 1) {
+    if (videoIndex.current >= questionCount - 1) {
       setGameOver(true);
     } else {
       setStatus('playing');
       startTimer(timeLimit, handleGuessSubmit);
-      const info = await getVideoInfo(videoIds[videoIndex + 1]);
+      videoIndex.current += 1;
+      const info = await getVideoInfo(videoIds[videoIndex.current]);
       setViewCount(info.viewCount);
-      setVideoIndex(prev => prev + 1);
     }
   };
 
@@ -104,7 +104,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
       fs: 0,
       modestbranding: 1,
       rel: 0,
-      playlist: videoIds[videoIndex]
+      playlist: videoIds[videoIndex.current]
     },
   };
   
@@ -125,7 +125,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
               {timeLeft !== null ? (
                 <div className={`flex items-center gap-2 ${timeLeft <= 5 ? 'text-red-600 font-bold animate-pulse' : 'text-neutral-700'}`}>
                   <Clock className="w-5 h-5" />
-                  <span className="text-lg font-bold">{timeLeft} 秒</span>
+                  <span className="text-lg font-bold">{timeLeft} 秒{status == "result" && "後開始下一題"}</span>
                 </div>
               ) : (
                 <div className="text-lg font-bold text-neutral-700">無時限</div>
@@ -133,7 +133,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
             </div>
             
             <div className="text-lg font-bold text-neutral-700">
-              回合: {videoIndex + 1}/{questionCount}
+              回合: {videoIndex.current + 1}/{questionCount}
             </div>
           </div>
         </CardHeader>
@@ -141,7 +141,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
         <CardContent className="space-y-6">
           <div className="flex justify-center rounded-lg overflow-hidden shadow-lg relative w-fit mx-auto">
             <YouTube 
-              videoId={videoIds[videoIndex]} 
+              videoId={videoIds[videoIndex.current]} 
               opts={opts} 
               onReady={onPlayerReady}
               className="rounded-lg overflow-hidden"
@@ -172,7 +172,6 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
                 <Button 
                   onClick={handleGuessSubmit}
                   className="bg-red-600 hover:bg-red-700 text-white"
-                  disabled={!guessValue}
                 >
                   猜測
                 </Button>
@@ -180,7 +179,7 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
             </div>
           )}
           
-          {status === 'result' && videoIds[videoIndex] && (
+          {status === 'result' && videoIds[videoIndex.current] && (
             <div className="space-y-4 text-center">
               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -200,9 +199,9 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
               
               <div className="text-lg">
                 <div className="flex justify-center items-center gap-2 mt-2">
-                  {Math.abs(guessValue - viewCount) < viewCount * 0.1 ? (
+                  {+calculateScore(guessValue || 0, viewCount) >= 80 ? (
                     <span className="text-green-600 font-bold">非常接近！</span>
-                  ) : Math.abs(guessValue - viewCount) < viewCount * 0.3 ? (
+                  ) : +calculateScore(guessValue || 0, viewCount) >= 40 ? (
                     <span className="text-blue-600 font-bold">還不錯！</span>
                   ) : (
                     <span className="text-orange-600 font-bold">差距有點大！</span>
@@ -233,7 +232,8 @@ const Game = ({ questionCount, timeLimit, onBackToHome, videoIds }: GameProps) =
                       onClick={() => {
                         setGameOver(false);
                         setScore(0);
-                        setVideoIndex(0);
+                        videoIndex.current = -1;
+                        handleNextRound();
                       }}
                       className="bg-red-600 hover:bg-red-700 text-white px-8"
                     >
