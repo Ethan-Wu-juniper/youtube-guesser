@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatNumber, calculateScore } from "@/lib/services/videoService";
 import YouTube from "react-youtube";
@@ -38,7 +38,7 @@ export const GameResult = ({
 
   return (
     <div className="space-y-8 w-full">
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-4 pt-6">
         <h2 className="text-2xl font-bold text-red-600">遊戲結束！</h2>
         <p className="text-xl">
           總分: <span className="font-bold">{totalScore}</span>
@@ -106,7 +106,7 @@ export const GameResult = ({
         </div>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center p-4">
         <Button 
           onClick={onBackToHome}
           className="bg-neutral-600 hover:bg-neutral-700 text-white px-8 w-full sm:w-auto"
